@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	:root {
+		--background: 9 9 11;
+		--foreground: 244 244 245;
+		--border: 39 39 42;
+		--primary: 59 130 246;
+		--primary-foreground: 255 255 255;
+		--accent: 39 39 42;
+		--accent-foreground: 244 244 245;
+	}
+
+	* {
+		@apply border-zinc-800;
+	}
+
+	html,
+	body,
+	#__next {
+		height: 100%;
+	}
+
+	body {
+		@apply bg-zinc-950 text-zinc-100 font-sans antialiased;
+	}
+}
+
+@layer utilities {
+	.bg-background {
+		background-color: rgb(var(--background));
+	}
+
+	.text-foreground {
+		color: rgb(var(--foreground));
+	}
+
+	.text-onBackground {
+		color: rgb(var(--foreground));
+	}
+
+	.border-border {
+		border-color: rgb(var(--border));
+	}
+
+	.bg-primary {
+		background-color: rgb(var(--primary));
+	}
+
+	.text-primary {
+		color: rgb(var(--primary));
+	}
+
+	.text-primary-foreground {
+		color: rgb(var(--primary-foreground));
+	}
+
+	.hover\:bg-primary\/90:hover {
+		background-color: rgb(var(--primary) / 0.9);
+	}
+
+	.bg-accent {
+		background-color: rgb(var(--accent));
+	}
+
+	.text-accent-foreground {
+		color: rgb(var(--accent-foreground));
+	}
+
+	.text-gradient-blue {
+		@apply bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent;
+	}
+
+	.fade-in {
+		animation: fadeIn 180ms ease-out;
+	}
+}

@@ -1,0 +1,85 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['DM Sans', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
+      },
+      colors: {
+        zinc: {
+          950: '#09090b',
+          900: '#18181b',
+          875: '#1c1c1f',
+          850: '#202023',
+          800: '#27272a',
+          750: '#2e2e32',
+          700: '#3f3f46',
+          600: '#52525b',
+          500: '#71717a',
+          400: '#a1a1aa',
+          300: '#d4d4d8',
+          200: '#e4e4e7',
+          100: '#f4f4f5',
+          50: '#fafafa',
+        },
+        blue: {
+          950: '#172554',
+          900: '#1e3a8a',
+          800: '#1e40af',
+          700: '#1d4ed8',
+          600: '#2563eb',
+          500: '#3b82f6',
+          400: '#60a5fa',
+          300: '#93c5fd',
+          200: '#bfdbfe',
+          100: '#dbeafe',
+          50: '#eff6ff',
+        },
+        arena: {
+          bg: '#09090b',
+          surface: '#121214',
+          card: '#18181b',
+          border: '#27272a',
+          primary: '#3b82f6',
+          accent: '#6366f1',
+          success: '#22c55e',
+          warning: '#eab308',
+          danger: '#ef4444',
+          muted: '#71717a',
+        },
+      },
+      screens: {
+        xs: '480px',
+        sm: '640px',
+        md: '768px',
+        lg: '1024px',
+        xl: '1280px',
+        '2xl': '1536px',
+        '3xl': '1920px',
+      },
+      animation: {
+        'spin-slow': 'spin 3s linear infinite',
+        'pulse-fast': 'pulse 1s ease-in-out infinite',
+        'slide-up': 'slideUp 0.2s ease-out',
+        'fade-in': 'fadeIn 0.15s ease-out',
+      },
+      keyframes: {
+        slideUp: {
+          '0%': { transform: 'translateY(8px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+      },
+    },
+  },
+  plugins: [],
+};
