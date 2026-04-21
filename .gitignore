@@ -24,6 +24,7 @@ Thumbs.db
 
 # Optional: if using TypeScript
 *.tsbuildinfo
+next-env.d.ts
 
 # Optional: if using testing tools
 coverage/
@@ -35,3 +36,9 @@ jest-test-results.json
 
 # Optional: if using TurboRepo or monorepo
 turbo/
+
+# Python virtual environments (unused in Node.js projects)
+.venv/
+venv/
+env/
+ENV/
