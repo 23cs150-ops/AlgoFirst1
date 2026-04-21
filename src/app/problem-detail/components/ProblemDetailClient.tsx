@@ -1,14 +1,22 @@
 'use client';
 
 import React from 'react';
+import { useSearchParams } from 'next/navigation';
 import { MOCK_PROBLEMS } from '@/lib/mockData';
 import { useSubmissionStore } from '@/context/SubmissionContext';
 import ProblemStatement from './ProblemStatement';
 import CodeEditorPanel from './CodeEditorPanel';
 
 export default function ProblemDetailClient() {
+  const searchParams = useSearchParams();
   const { submissions: allSubmissions } = useSubmissionStore();
-  const problem = MOCK_PROBLEMS[0];
+  const problemId = searchParams.get('id');
+  const problemSlug = searchParams.get('slug');
+
+  const problem =
+    MOCK_PROBLEMS.find((item) => item.id === problemId) ||
+    MOCK_PROBLEMS.find((item) => item.slug === problemSlug) ||
+    MOCK_PROBLEMS[0];
 
   if (!problem) {
     return (

@@ -1,9 +1,11 @@
 'use client';
 import React, { useState, useRef } from 'react';
+import { AxiosError } from 'axios';
 import { Problem } from '@/lib/mockData';
 import { LANGUAGES } from '@/lib/mockData';
 import { Submission } from '@/lib/mockData';
 import { useSubmissionStore } from '@/context/SubmissionContext';
+import { executeCode as executeCodeApi } from '@/services/api';
 import MonacoEditorWrapper from './MonacoEditor';
 import TestResultsPanel from './TestResultsPanel';
 import VerdictBadge from '@/components/ui/VerdictBadge';
@@ -62,36 +64,11 @@ export default function CodeEditorPanel({ problem }: CodeEditorPanelProps) {
 
   const selectedLang = LANGUAGES.find((l) => l.id === selectedLangId) || LANGUAGES[1];
 
-  const normalizeCode = (value: string) => value.replace(/\s+/g, '').trim();
-  const starterForCurrentLanguage = problem.starterCode[selectedLangId] || '';
+  const toRuntimeLabel = (runtimeMs?: string | null) => (runtimeMs ? `${runtimeMs} ms` : undefined);
 
-  const detectLanguageMismatch = (source: string, langId: string) => {
-    const text = source.toLowerCase();
-
-    const looksJava = /\bpublic\s+class\b|\bsystem\.out\.println\b|\bstatic\s+void\s+main\b/.test(text);
-    const looksPython = /\bdef\s+[a-z_][a-z0-9_]*\s*\(|\bprint\s*\(|\bself\b/.test(text);
-    const looksCpp = /#include\s*<|\bstd::\b|\busing\s+namespace\s+std\b/.test(text);
-    const looksJavaScript = /\bconsole\.log\b|\bfunction\s+[a-z_]|=>/.test(text);
-
-    if (langId === 'python3' && (looksJava || looksCpp)) return true;
-    if (langId === 'java' && (looksPython || looksCpp)) return true;
-    if (langId === 'cpp' && (looksPython || looksJava)) return true;
-    if (langId === 'javascript' && (looksJava || looksCpp || looksPython)) return true;
-    if (langId === 'typescript' && (looksJava || looksCpp || looksPython)) return true;
-
-    return false;
-  };
-
-  const evaluateCodeState = () => {
-    const current = code.trim();
-    const unchanged = normalizeCode(current) === normalizeCode(starterForCurrentLanguage);
-    const hasAlgorithmSignal = /\b(return|for|while|if|def|class|function|=>)\b/.test(current);
-    const mismatch = detectLanguageMismatch(current, selectedLangId);
-
-    if (!current || unchanged) return 'empty';
-    if (mismatch) return 'mismatch';
-    if (!hasAlgorithmSignal) return 'weak';
-    return 'valid';
+  const getErrorMessage = (error: unknown, fallback: string) => {
+    const axiosError = error as AxiosError<{ message?: string }>;
+    return axiosError?.response?.data?.message || axiosError?.message || fallback;
   };
 
   const handleLanguageChange = (langId: string) => {
@@ -106,141 +83,45 @@ export default function CodeEditorPanel({ problem }: CodeEditorPanelProps) {
     toast.info('Editor reset to starter code');
   };
 
-  const simulateRun = async (): Promise<RunResult> => {
-    // Backend integration: POST /api/submissions/run
-    // { problemId: problem.id, language: selectedLangId, code, testCaseInput: problem.testCases[0].input }
-    await new Promise((r) => setTimeout(r, 1800));
-
-    // Simulate a plausible result based on code content
-    const codeState = evaluateCodeState();
-    if (codeState === 'empty') {
-      return {
-        type: 'run',
-        verdict: 'Compilation Error',
-        runtime: 'N/A',
-        memory: 'N/A',
-        errorMessage: 'No executable solution found. Update starter code before running.',
-        passedCount: 0,
-        totalCount: problem.testCases.length,
-      };
-    }
-
-    if (codeState === 'mismatch') {
-      return {
-        type: 'run',
-        verdict: 'Compilation Error',
-        runtime: 'N/A',
-        memory: 'N/A',
-        errorMessage: `Language mismatch: selected ${selectedLang.label}, but code looks like another language.`,
-        passedCount: 0,
-        totalCount: problem.testCases.length,
-      };
-    }
-
-    if (codeState === 'weak') {
-      return {
-        type: 'run',
-        verdict: 'Wrong Answer',
-        runtime: '12 ms',
-        memory: '14.2 MB',
-        testResults: [
-          {
-            id: 'run-tc-1',
-            input: problem.testCases[0]?.input || '',
-            expected: problem.testCases[0]?.expectedOutput || '',
-            actual: '[]',
-            passed: false,
-            runtime: '12 ms',
-          },
-        ],
-        passedCount: 0,
-        totalCount: 1,
-      };
-    }
-    return {
-      type: 'run',
-      verdict: 'Accepted',
-      runtime: '52 ms',
-      memory: '16.4 MB',
-      testResults: problem.testCases.slice(0, 2).map((tc, i) => ({
-        id: `run-tc-${i + 1}`,
-        input: tc.input,
-        expected: tc.expectedOutput,
-        actual: tc.expectedOutput,
-        passed: true,
-        runtime: `${48 + i * 4} ms`,
-      })),
-      passedCount: 2,
-      totalCount: 2,
-    };
-  };
-
-  const simulateSubmit = async (): Promise<RunResult> => {
-    // Backend integration: POST /api/submissions/submit
-    // { problemId: problem.id, language: selectedLangId, code }
-    // Then poll GET /api/submissions/:id/status until status !== 'Pending'
-    await new Promise((r) => setTimeout(r, 2800));
-
-    const codeState = evaluateCodeState();
-    if (codeState === 'empty') {
-      return {
-        type: 'submit',
-        verdict: 'Compilation Error',
-        runtime: 'N/A',
-        memory: 'N/A',
-        errorMessage: 'Submission rejected: code is unchanged or empty.',
-        passedCount: 0,
-        totalCount: problem.testCases.length,
-      };
-    }
-
-    if (codeState === 'mismatch') {
-      return {
-        type: 'submit',
-        verdict: 'Compilation Error',
-        runtime: 'N/A',
-        memory: 'N/A',
-        errorMessage: `Submission rejected: selected ${selectedLang.label}, but code looks like another language.`,
-        passedCount: 0,
-        totalCount: problem.testCases.length,
-      };
-    }
-
-    if (codeState === 'weak') {
-      return {
-        type: 'submit',
-        verdict: 'Wrong Answer',
-        runtime: '12 ms',
-        memory: '14.2 MB',
-        passedCount: 1,
-        totalCount: problem.testCases.length,
-        testResults: problem.testCases.map((tc, i) => ({
-          id: `sub-tc-${i + 1}`,
+  const executeAgainstBackend = async (type: 'run' | 'submit'): Promise<RunResult> => {
+    const response = await executeCodeApi({
+      source_code: code,
+      language_id: selectedLang.judge0Id,
+      problemId: problem.id,
+      problemSnapshot: {
+        title: problem.title,
+        description: problem.description,
+        test_cases: problem.testCases.map((tc) => ({
           input: tc.input,
-          expected: tc.expectedOutput,
-          actual: i === 0 ? tc.expectedOutput : '[]',
-          passed: i === 0,
-          runtime: `${12 + i * 2} ms`,
+          expected_output: tc.expectedOutput,
         })),
-      };
-    }
+      },
+    });
+
+    const testResults = response.testResults.map((tc) => ({
+      id: tc.id,
+      input: tc.input,
+      expected: tc.expected_output,
+      actual: tc.actual_output || '',
+      passed: tc.passed,
+      runtime: toRuntimeLabel(tc.runtime),
+    }));
+
     return {
-      type: 'submit',
-      verdict: 'Accepted',
-      runtime: '52 ms',
-      memory: '16.4 MB',
-      passedCount: problem.testCases.length,
-      totalCount: problem.testCases.length,
-      testResults: problem.testCases.map((tc, i) => ({
-        id: `sub-tc-${i + 1}`,
-        input: tc.input,
-        expected: tc.expectedOutput,
-        actual: tc.expectedOutput,
-        passed: true,
-        runtime: `${48 + i * 3} ms`,
-      })),
+      type,
+      verdict: response.status,
+      runtime: toRuntimeLabel(response.runtime),
+      memory: response.memory || undefined,
+      passedCount: testResults.filter((tc) => tc.passed).length,
+      totalCount: testResults.length,
+      testResults,
+      errorMessage: response.compile_output || response.stderr || undefined,
+      stdout: response.stdout || undefined,
     };
   };
+
+  const runCode = () => executeAgainstBackend('run');
+  const submitCode = () => executeAgainstBackend('submit');
 
   const handleRun = async () => {
     setIsRunning(true);
@@ -248,15 +129,15 @@ export default function CodeEditorPanel({ problem }: CodeEditorPanelProps) {
     setRunResult(null);
     setErrorMessage(null);
     try {
-      const result = await simulateRun();
+      const result = await runCode();
       setRunResult(result);
       if (result.verdict === 'Accepted') {
         toast.success('All sample test cases passed!');
       } else {
         toast.error('Some test cases failed. Check the results below.');
       }
-    } catch {
-      const msg = 'Failed to run code. Please try again.';
+    } catch (error) {
+      const msg = getErrorMessage(error, 'Failed to run code. Please try again.');
       setErrorMessage(msg);
       toast.error(msg);
     } finally {
@@ -270,7 +151,7 @@ export default function CodeEditorPanel({ problem }: CodeEditorPanelProps) {
     setRunResult(null);
     setErrorMessage(null);
     try {
-      const result = await simulateSubmit();
+      const result = await submitCode();
       setRunResult(result);
 
       const normalizedStatus: Submission['status'] =
@@ -298,8 +179,8 @@ export default function CodeEditorPanel({ problem }: CodeEditorPanelProps) {
       } else {
         toast.error(`${result.verdict} — review the error details below.`);
       }
-    } catch {
-      const msg = 'Submission failed. Please try again.';
+    } catch (error) {
+      const msg = getErrorMessage(error, 'Submission failed. Please try again.');
       setErrorMessage(msg);
       toast.error(msg);
     } finally {

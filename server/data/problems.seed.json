@@ -1,0 +1,60 @@
+[
+  {
+    "problemKey": "prob-001",
+    "title": "Two Sum",
+    "description": "Find indices of two numbers that add up to target.",
+    "input_format": "Array and target on separate lines",
+    "output_format": "Indices array",
+    "test_cases": [
+      { "input": "[2,7,11,15]\n9", "expected_output": "[0,1]" },
+      { "input": "[3,2,4]\n6", "expected_output": "[1,2]" },
+      { "input": "[3,3]\n6", "expected_output": "[0,1]" }
+    ]
+  },
+  {
+    "problemKey": "prob-002",
+    "title": "Add Two Numbers",
+    "description": "Add two linked-list represented numbers.",
+    "input_format": "Two arrays on separate lines",
+    "output_format": "Result array",
+    "test_cases": [
+      { "input": "[2,4,3]\n[5,6,4]", "expected_output": "[7,0,8]" },
+      { "input": "[0]\n[0]", "expected_output": "[0]" }
+    ]
+  },
+  {
+    "problemKey": "prob-003",
+    "title": "Longest Substring Without Repeating Characters",
+    "description": "Return max length of substring without duplicate characters.",
+    "input_format": "Single string literal",
+    "output_format": "Integer length",
+    "test_cases": [
+      { "input": "\"abcabcbb\"", "expected_output": "3" },
+      { "input": "\"bbbbb\"", "expected_output": "1" },
+      { "input": "\"pwwkew\"", "expected_output": "3" }
+    ]
+  },
+  {
+    "problemKey": "prob-004",
+    "title": "Median of Two Sorted Arrays",
+    "description": "Compute median for two sorted arrays.",
+    "input_format": "Two arrays on separate lines",
+    "output_format": "Floating number",
+    "test_cases": [
+      { "input": "[1,3]\n[2]", "expected_output": "2.00000" },
+      { "input": "[1,2]\n[3,4]", "expected_output": "2.50000" }
+    ]
+  },
+  {
+    "problemKey": "prob-005",
+    "title": "Valid Parentheses",
+    "description": "Validate matching brackets.",
+    "input_format": "String with brackets",
+    "output_format": "true or false",
+    "test_cases": [
+      { "input": "\"()\"", "expected_output": "true" },
+      { "input": "\"()[]{}\"", "expected_output": "true" },
+      { "input": "\"(]\"", "expected_output": "false" }
+    ]
+  }
+]

@@ -1,7 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { MOCK_PROBLEMS, MOCK_SUBMISSIONS, Submission } from '@/lib/mockData';
+import { fetchSubmissions } from '@/services/api';
 
 interface SubmissionContextValue {
   submissions: Submission[];
@@ -9,6 +10,41 @@ interface SubmissionContextValue {
 }
 
 const SubmissionContext = createContext<SubmissionContextValue | undefined>(undefined);
+const SUBMISSIONS_CACHE_KEY = 'algofirst:submissions-cache:v1';
+
+function readCachedSubmissions(): Submission[] | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(SUBMISSIONS_CACHE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return null;
+    }
+
+    return parsed as Submission[];
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedSubmissions(submissions: Submission[]): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(SUBMISSIONS_CACHE_KEY, JSON.stringify(submissions));
+  } catch {
+    // Ignore cache write failures; MongoDB remains the source of truth.
+  }
+}
 
 function buildInitialSubmissions(): Submission[] {
   const existingByProblem = new Map<string, Submission[]>();
@@ -65,20 +101,53 @@ function buildInitialSubmissions(): Submission[] {
 }
 
 export function SubmissionProvider({ children }: { children: React.ReactNode }) {
-  const [submissions, setSubmissions] = useState<Submission[]>(() => buildInitialSubmissions());
+  const [submissions, setSubmissions] = useState<Submission[]>(() => readCachedSubmissions() || []);
+
+  useEffect(() => {
+    let active = true;
+
+    (async () => {
+      try {
+        const persisted = await fetchSubmissions();
+        if (!active) return;
+
+        const sorted = [...persisted].sort(
+          (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime(),
+        );
+
+        setSubmissions(sorted);
+        writeCachedSubmissions(sorted);
+      } catch {
+        // Keep existing mock seed as fallback when backend is unavailable.
+        if (!active) return;
+
+        const fallback = readCachedSubmissions() || buildInitialSubmissions();
+        setSubmissions(fallback);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const addSubmission = (submission: Omit<Submission, 'id' | 'submittedAt'>) => {
     const now = new Date().toISOString();
     const id = `sub-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-    setSubmissions((prev) => [
-      {
-        id,
-        submittedAt: now,
-        ...submission,
-      },
-      ...prev,
-    ]);
+    setSubmissions((prev) => {
+      const next = [
+        {
+          id,
+          submittedAt: now,
+          ...submission,
+        },
+        ...prev,
+      ];
+
+      writeCachedSubmissions(next);
+      return next;
+    });
   };
 
   const value = useMemo(
@@ -97,7 +166,7 @@ export function useSubmissionStore(): SubmissionContextValue {
 
   if (!context) {
     return {
-      submissions: buildInitialSubmissions(),
+      submissions: [],
       addSubmission: () => undefined,
     };
   }

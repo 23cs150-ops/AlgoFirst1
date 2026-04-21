@@ -176,7 +176,7 @@ export default function ProblemTable({
                   {/* Title */}
                   <td className="px-4 py-3">
                     <Link
-                      href="/problem-detail"
+                      href={`/problem-detail?id=${problem.id}`}
                       className="flex items-center gap-2 group/title"
                     >
                       <span className="text-zinc-200 font-medium group-hover/title:text-blue-400 transition-colors">
