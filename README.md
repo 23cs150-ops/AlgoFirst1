@@ -1,6 +1,6 @@
 # AlgoFirst
 
-**Version:** 0.2.0
+**Version:** 0.2.1
 
 AlgoFirst is a coding practice platform UI built with Next.js, TypeScript, and Tailwind CSS. Fully integrated with Express backend, MongoDB, and Judge0 for code execution.
 
@@ -11,7 +11,15 @@ AlgoFirst is a coding practice platform UI built with Next.js, TypeScript, and T
 - **Code Execution:** Judge0 API (ce.judge0.com) with configurable timeout
 - **Build & Quality:** ESLint, Prettier, Concurrently for parallel tasks
 
-## ✅ Latest Updates (v0.2.0)
+## ✅ Latest Updates (v0.2.1)
+
+### Profile & Auth UX
+- ✅ **Quick logout from profile:** Added logout action in profile header
+- ✅ **Auth redirect on logout:** Users are redirected to `/sign-up-login-screen` after logout
+
+### Theme Support
+- ✅ **Light theme foundation:** Added `.light` token set for background, text, border, primary, and accent colors
+- ✅ **Light mode UI overrides:** Common dark utility classes now map to readable light equivalents when `.light` class is active
 
 ### Security & Stability
 - ✅ Fixed all npm audit vulnerabilities (0 remaining)

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { MOCK_PROBLEMS } from '@/lib/mockData';
 import { useSubmissionStore } from '@/context/SubmissionContext';
+import { useRouter } from 'next/navigation';
 import VerdictBadge from '@/components/ui/VerdictBadge';
 import DifficultyBadge from '@/components/ui/DifficultyBadge';
 import {
@@ -21,6 +22,7 @@ import {
   Bell,
   Monitor,
   ChevronRight,
+  LogOut,
 } from 'lucide-react';
 
 type Tab = 'account' | 'security' | 'preferences' | 'stats';
@@ -49,7 +51,8 @@ function formatRelativeTime(isoString: string): string {
 }
 
 export default function ProfileClient() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const router = useRouter();
   const { submissions: allSubmissions } = useSubmissionStore();
   const [activeTab, setActiveTab] = useState<Tab>('account');
 
@@ -118,6 +121,11 @@ export default function ProfileClient() {
     setTimeout(() => setPrefSaved(false), 2000);
   };
 
+  const handleLogout = () => {
+    logout();
+    router.push('/sign-up-login-screen');
+  };
+
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'account', label: 'Account', icon: <User size={15} /> },
     { id: 'security', label: 'Security', icon: <Lock size={15} /> },
@@ -147,6 +155,13 @@ export default function ProfileClient() {
             </p>
           </div>
           <div className="ml-auto flex items-center gap-3">
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-zinc-700 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100 transition-colors"
+            >
+              <LogOut size={14} />
+              Logout
+            </button>
             <div className="text-center">
               <div className="text-lg font-bold text-zinc-100 tabular-nums">{solvedCount}</div>
               <div className="text-xs text-zinc-500">Solved</div>
