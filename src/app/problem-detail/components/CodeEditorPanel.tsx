@@ -1,14 +1,12 @@
 'use client';
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AxiosError } from 'axios';
 import { Problem } from '@/lib/mockData';
 import { LANGUAGES } from '@/lib/mockData';
 import { Submission } from '@/lib/mockData';
 import { useSubmissionStore } from '@/context/SubmissionContext';
-import { executeCode as executeCodeApi } from '@/services/api';
+import { executeCode as executeCodeApi, getMentorAnalysis, MentorAnalysisResponse } from '@/services/api';
 import MonacoEditorWrapper from './MonacoEditor';
-import TestResultsPanel from './TestResultsPanel';
-import VerdictBadge from '@/components/ui/VerdictBadge';
 import { toast } from 'sonner';
 import {
   Play,
@@ -18,14 +16,13 @@ import {
   RotateCcw,
   Maximize2,
   Settings2,
-  ChevronUp,
   AlertCircle,
 } from 'lucide-react';
 
-type VerdictStatus =
+export type VerdictStatus =
   | 'Accepted' |'Wrong Answer' |'Time Limit Exceeded' |'Runtime Error' |'Compilation Error' |'Pending' |'Running';
 
-interface RunResult {
+export interface RunResult {
   type: 'run' | 'submit';
   verdict: VerdictStatus;
   runtime?: string;
@@ -42,13 +39,21 @@ interface RunResult {
   }[];
   errorMessage?: string;
   stdout?: string;
+  code?: string;
+  mentorAnalysis?: MentorAnalysisResponse['data'];
 }
 
 interface CodeEditorPanelProps {
   problem: Problem;
+  onExecutionStateChange?: (state: {
+    runResult: RunResult | null;
+    isLoading: boolean;
+    loadingType: 'run' | 'submit' | null;
+    errorMessage: string | null;
+  }) => void;
 }
 
-export default function CodeEditorPanel({ problem }: CodeEditorPanelProps) {
+export default function CodeEditorPanel({ problem, onExecutionStateChange }: CodeEditorPanelProps) {
   const { addSubmission } = useSubmissionStore();
   const [selectedLangId, setSelectedLangId] = useState('python3');
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
@@ -56,11 +61,10 @@ export default function CodeEditorPanel({ problem }: CodeEditorPanelProps) {
   const [code, setCode] = useState(problem.starterCode['python3']);
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMentorLoading, setIsMentorLoading] = useState(false);
   const [runResult, setRunResult] = useState<RunResult | null>(null);
-  const [bottomPanelOpen, setBottomPanelOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const editorRef = useRef<unknown>(null);
 
   const selectedLang = LANGUAGES.find((l) => l.id === selectedLangId) || LANGUAGES[1];
 
@@ -117,15 +121,24 @@ export default function CodeEditorPanel({ problem }: CodeEditorPanelProps) {
       testResults,
       errorMessage: response.compile_output || response.stderr || undefined,
       stdout: response.stdout || undefined,
+      code,
     };
   };
 
   const runCode = () => executeAgainstBackend('run');
   const submitCode = () => executeAgainstBackend('submit');
 
+  useEffect(() => {
+    onExecutionStateChange?.({
+      runResult,
+      isLoading: isRunning || isSubmitting || isMentorLoading,
+      loadingType: isRunning ? 'run' : isSubmitting ? 'submit' : null,
+      errorMessage,
+    });
+  }, [errorMessage, isRunning, isSubmitting, isMentorLoading, onExecutionStateChange, runResult]);
+
   const handleRun = async () => {
     setIsRunning(true);
-    setBottomPanelOpen(true);
     setRunResult(null);
     setErrorMessage(null);
     try {
@@ -147,7 +160,6 @@ export default function CodeEditorPanel({ problem }: CodeEditorPanelProps) {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    setBottomPanelOpen(true);
     setRunResult(null);
     setErrorMessage(null);
     try {
@@ -170,6 +182,42 @@ export default function CodeEditorPanel({ problem }: CodeEditorPanelProps) {
 
       if (result.verdict === 'Accepted') {
         toast.success('🎉 Accepted! All test cases passed.', { duration: 5000 });
+        
+        // Fetch AI mentor analysis after successful submission
+        setIsMentorLoading(true);
+        try {
+          const failedTestCase = result.testResults?.find((tc) => !tc.passed);
+          const mentorResponse = await getMentorAnalysis({
+            problemTitle: problem.title,
+            problemStatement: problem.description,
+            language: selectedLang.label,
+            userCode: code,
+            verdict: result.verdict,
+            stderr: result.errorMessage || '',
+            failedCase: failedTestCase
+              ? {
+                  input: failedTestCase.input,
+                  expected: failedTestCase.expected,
+                  actual: failedTestCase.actual,
+                }
+              : undefined,
+          });
+
+          // Update runResult with mentor analysis
+          setRunResult((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  mentorAnalysis: mentorResponse.data,
+                }
+              : null,
+          );
+        } catch (mentorError) {
+          console.error('Mentor analysis failed:', mentorError);
+          toast.error('Could not generate mentor insights, but submission was successful.');
+        } finally {
+          setIsMentorLoading(false);
+        }
       } else if (result.verdict === 'Wrong Answer') {
         toast.error('Wrong Answer — check your logic against the failing test case.');
       } else if (result.verdict === 'Time Limit Exceeded') {
@@ -188,7 +236,7 @@ export default function CodeEditorPanel({ problem }: CodeEditorPanelProps) {
     }
   };
 
-  const isLoading = isRunning || isSubmitting;
+  const isLoading = isRunning || isSubmitting || isMentorLoading;
 
   return (
     <div className="flex flex-col h-full bg-zinc-950">
@@ -289,44 +337,6 @@ export default function CodeEditorPanel({ problem }: CodeEditorPanelProps) {
           fontSize={fontSize}
         />
       </div>
-
-      {/* Bottom Panel Toggle */}
-      <div
-        className="flex-shrink-0 border-t border-zinc-800 bg-zinc-900/50 cursor-pointer"
-        onClick={() => setBottomPanelOpen(!bottomPanelOpen)}
-      >
-        <div className="flex items-center justify-between px-4 py-2">
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-medium text-zinc-400">
-              {runResult ? 'Test Results' : 'Test Cases'}
-            </span>
-            {runResult && (
-              <VerdictBadge status={runResult.verdict} size="sm" />
-            )}
-            {runResult?.passedCount !== undefined && (
-              <span className="text-xs font-mono text-zinc-500 tabular-nums">
-                {runResult.passedCount}/{runResult.totalCount} passed
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-1 text-zinc-600">
-            {bottomPanelOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-          </div>
-        </div>
-      </div>
-
-      {/* Test Results Panel */}
-      {bottomPanelOpen && (
-        <div className="flex-shrink-0 border-t border-zinc-800 h-52 overflow-hidden">
-          <TestResultsPanel
-            problem={problem}
-            runResult={runResult}
-            isLoading={isLoading}
-            loadingType={isRunning ? 'run' : isSubmitting ? 'submit' : null}
-            errorMessage={errorMessage}
-          />
-        </div>
-      )}
 
       {/* Action Bar */}
       <div className="flex-shrink-0 border-t border-zinc-800 bg-zinc-900 px-4 py-3 flex items-center justify-between gap-3">

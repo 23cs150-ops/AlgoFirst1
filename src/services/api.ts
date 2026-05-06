@@ -69,3 +69,57 @@ export async function fetchSubmissions(problemId?: string): Promise<PersistedSub
 
 	return response.data.submissions;
 }
+
+export interface MentorAnalysisRequest {
+	problemTitle: string;
+	problemStatement: string;
+	language: string;
+	userCode: string;
+	verdict: string;
+	stderr?: string;
+	failedCase?: {
+		input?: string;
+		expected?: string;
+		actual?: string;
+	};
+}
+
+export interface MentorAnalysisResponse {
+	success: boolean;
+	data: {
+		verdict: string;
+		isClose: boolean;
+		rootCause: string;
+		complexity: {
+			time: string;
+			space: string;
+			optimalTime: string;
+			optimalSpace: string;
+			efficiencyScore: number;
+		};
+		scores: {
+			time: number;
+			space: number;
+			readability: number;
+			optimization: number;
+			interview: number;
+		};
+		pattern: string;
+		improvements: string[];
+		hints: string[];
+		edgeCases: string[];
+		visualization: Array<{
+			step: number;
+			description: string;
+			pseudoCode: string;
+		}>;
+		interviewInsight: string;
+	};
+}
+
+export async function getMentorAnalysis(
+	payload: MentorAnalysisRequest,
+): Promise<MentorAnalysisResponse> {
+	const response = await api.post<MentorAnalysisResponse>('/api/mentor-analysis', payload);
+	return response.data;
+}
