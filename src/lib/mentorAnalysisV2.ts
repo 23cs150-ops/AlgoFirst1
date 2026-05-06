@@ -20,8 +20,11 @@ export interface MentorComplexity {
 
 export interface MentorVisualizationStep {
   step: number;
-  action: string;
-  state: Record<string, string | number | boolean>;
+  action?: string;
+  state?: Record<string, string | number | boolean>;
+  // Backend fields
+  description?: string;
+  pseudoCode?: string;
 }
 
 export interface MentorAnalysis {
