@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AlgoFirst A3 Project Sheet</title>
+  <style>
+    @page {
+      size: A3 portrait;
+      margin: 8mm;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      color: #0f172a;
+      background: #f8fafc;
+    }
+
+    .sheet {
+      width: 100%;
+      min-height: 100vh;
+      padding: 8mm;
+      background: linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%);
+    }
+
+    /* Academic Header Styles */
+    .academic-header {
+      background: #ffffff;
+      border: 3px solid #1B5E20;
+      border-radius: 0;
+      padding: 12px 18px 14px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .logo-left, .logo-right {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 116px;
+      height: 116px;
+    }
+
+    .logo-left img {
+      width: 108px;
+      height: 108px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .logo-right img {
+      width: 110px;
+      height: 110px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .header-center {
+      flex: 1;
+      text-align: center;
+    }
+
+    .institution-name {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: #1B5E20;
+      letter-spacing: 0.3px;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+
+    .institution-tagline {
+      margin: 6px 0 0;
+      font-size: 11px;
+      color: #0D47A1;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    .college-name {
+      margin: 10px 0 0;
+      font-size: 16px;
+      font-weight: 700;
+      color: #0D47A1;
+      letter-spacing: 0.3px;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+
+    .college-info {
+      margin: 4px 0 0;
+      font-size: 10px;
+      color: #424242;
+      letter-spacing: 0.3px;
+    }
+
+    .college-address {
+      margin: 4px 0 0;
+      font-size: 10px;
+      color: #424242;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+    }
+
+    .department {
+      margin: 10px 0 0;
+      font-size: 14px;
+      font-weight: 700;
+      color: #C62828;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      border-top: 2px solid #E0E0E0;
+      padding-top: 8px;
+    }
+
+    .header {
+      border: 2px solid #0f172a;
+      border-radius: 10px;
+      padding: 10px 14px;
+      background: #ffffff;
+      margin-bottom: 10px;
+    }
+
+    .title {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: 0.2px;
+      line-height: 1.15;
+      color: #0b3b66;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .card {
+      border: 2px solid #0f172a;
+      border-radius: 10px;
+      background: #ffffff;
+      padding: 12px 14px;
+    }
+
+    h2 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      color: #0b3b66;
+      border-bottom: 2px solid #cbd5e1;
+      padding-bottom: 4px;
+    }
+
+    .objective-list {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 10px;
+      line-height: 1.3;
+    }
+
+    .objective-list li {
+      margin-bottom: 5px;
+    }
+
+    .arch {
+      display: grid;
+      gap: 9px;
+      font-size: 10px;
+      line-height: 1.3;
+    }
+
+    .layer {
+      border: 1.5px solid #1e293b;
+      border-radius: 8px;
+      padding: 9px;
+      background: #f8fafc;
+    }
+
+    .layer h3 {
+      margin: 0 0 4px;
+      font-size: 12px;
+      color: #0f172a;
+    }
+
+    .arrow {
+      text-align: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: #0b3b66;
+      line-height: 1;
+    }
+
+    .flow {
+      margin-top: 10px;
+    }
+
+    .flow ol {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 10px;
+      line-height: 1.3;
+    }
+
+    .flow li {
+      margin-bottom: 4px;
+    }
+
+    .footer {
+      margin-top: 10px;
+      border: 2px solid #0f172a;
+      border-radius: 10px;
+      background: #ffffff;
+      padding: 10px 12px;
+      font-size: 11px;
+      color: #334155;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .footer-block {
+      border: 1px solid #dbe3ea;
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: #f8fafc;
+    }
+
+    .footer-label {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      color: #1B5E20;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .footer-line {
+      font-size: 11px;
+      color: #0f172a;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .footer-line.small {
+      font-size: 10px;
+    }
+
+    @media print {
+      .sheet {
+        min-height: auto;
+        zoom: 0.88;
+        transform-origin: top center;
+      }
+
+      .grid,
+      .footer {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="sheet">
+    <!-- Academic Poster Header -->
+    <section class="academic-header">
+      <!-- Left Logo -->
+      <div class="logo-left">
+        <img src="left.jpg" alt="Sri Siddhartha Academy of Higher Education logo" />
+      </div>
+
+      <!-- Center Content -->
+      <div class="header-center">
+        <h1 class="institution-name">Sri Siddhartha Academy of Higher Education</h1>
+        <p class="institution-tagline">(Deemed to be University, Accredited 'A+' Grade by NAAC)</p>
+
+        <h2 class="college-name">Sri Siddhartha Institute of Technology</h2>
+        <p class="college-info">(A Constituent College of SSAHE)</p>
+        <p class="college-address">Maralur, Kunigal Road, Tumakuru – 572105</p>
+
+        <p class="department">DEPARTMENT OF COMPUTER SCIENCE AND ENGINEERING</p>
+      </div>
+
+      <!-- Right Logo -->
+      <div class="logo-right">
+        <img src="sri-siddhartha-institute-of-technology-ssit-logo.png" alt="Sri Siddhartha Institute of Technology logo" />
+      </div>
+    </section>
+
+    <section class="header">
+      <h1 class="title">AlgoFirst: Full-Stack Coding Practice and Evaluation Platform</h1>
+      
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h2>Objective</h2>
+        <ol class="objective-list">
+          <li>Build an interactive coding platform where students solve algorithmic problems inside a browser-based editor.</li>
+          <li>Execute user code securely with Judge0 and provide instant, test-case-based verdicts.</li>
+          <li>Persist users, problems, and submissions in MongoDB to support reliable progress tracking.</li>
+          <li>Enable guided practice through problem filtering, difficulty labeling, and student learning plans.</li>
+          <li>Provide profile and progress analytics for continuous performance improvement.</li>
+        </ol>
+      </article>
+
+      <article class="card">
+        <h2>Architecture</h2>
+        <div class="arch">
+          <div class="layer">
+            <h3>1) Client Layer (Next.js + React + TypeScript + Tailwind)</h3>
+            <div>Pages: Home, Auth, Problem List, Problem Detail, Progress, Profile, Student Plan</div>
+            <div>Key UI: Monaco Editor, Problem Statement, Test Results Panel</div>
+            <div>State: AuthContext and SubmissionContext</div>
+          </div>
+
+          <div class="arrow">HTTP/JSON API (Axios) ↓</div>
+
+          <div class="layer">
+            <h3>2) Application Layer (Express.js)</h3>
+            <div>Route: <strong>POST /api/execute</strong></div>
+            <div>Controller: executeController</div>
+            <div>Services: judge0Service, db, seedProblems</div>
+            <div>Responsibility: request validation, execution orchestration, output normalization, verdict generation</div>
+          </div>
+
+          <div class="arrow">Execution Request ↓</div>
+
+          <div class="layer">
+            <h3>3) Execution Layer (Judge0 API)</h3>
+            <div>Compiles and executes submitted code in supported languages.</div>
+            <div>Returns output, runtime status, and error details to backend.</div>
+          </div>
+
+          <div class="arrow">Store and Query ↓</div>
+
+          <div class="layer">
+            <h3>4) Data Layer (MongoDB + Mongoose)</h3>
+            <div>Collections/Models: User, Problem, Submission</div>
+            <div>Stores attempts, verdict history, and user progress metrics.</div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="card flow">
+      <h2>Execution Workflow</h2>
+      <ol>
+        <li>User selects a problem and writes code in Monaco Editor.</li>
+        <li>Frontend sends source code, language, and test inputs to backend API.</li>
+        <li>Backend forwards code execution request to Judge0.</li>
+        <li>Judge0 compiles/runs code and returns raw output with execution status.</li>
+        <li>Backend compares actual output with expected output using normalization logic.</li>
+        <li>Final verdict and per-test results are returned to frontend UI.</li>
+        <li>Submission data is saved in MongoDB and reflected in Progress/Profile dashboards.</li>
+      </ol>
+    </section>
+
+    <section class="footer">
+      <div class="footer-block">
+        <span class="footer-label">PRESENTED BY</span>
+        <div class="footer-line">Siddalingesh A Ballary (23CS140) and Sujal MR (23CS150)</div>
+      </div>
+      <div class="footer-block">
+        <span class="footer-label">UNDER THE GUIDANCE OF</span>
+        <div class="footer-line small">Veena N D, M.Tech. (Ph.D.)</div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
