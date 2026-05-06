@@ -13,6 +13,17 @@ AlgoFirst is a coding practice platform UI built with Next.js, TypeScript, and T
 
 ## ✅ Latest Updates (v0.2.2)
 
+### Backend AI Mentor Service (v0.2.3 Preview)
+
+- ✅ **OpenRouter AI Integration:** Backend service for dynamic, real-time code analysis using OpenRouter API
+- ✅ **REAL Complexity Inference:** Analyzes actual submitted code to infer O(n) complexity from nested loops, recursion, data structures
+- ✅ **Structured Mentor Feedback:** Returns JSON with complexity scores, pattern detection, edge cases, improvements, hints, visualization steps
+- ✅ **POST /api/mentor-analysis:** New backend endpoint for mentor analysis (called on successful SUBMIT)
+- ✅ **SUBMIT-Only Flow:** AI mentor analysis available exclusively after successful submission (RUN shows minimal feedback)
+- ✅ **Frontend Integration:** CodeEditorPanel wired to call mentor API and attach analysis to runResult
+
+> Current Status: Mentor service tested and working. Integrate into frontend MentorDashboard rendering in next release.
+
 ### Frontend UX & Mentor (v0.2.2)
 
 - ✅ **Run vs Submit separation:** Strictly separate `Run` (quick feedback) from `Submit` (final evaluation + insights) in the problem-detail UI, similar to LeetCode.
@@ -22,8 +33,6 @@ AlgoFirst is a coding practice platform UI built with Next.js, TypeScript, and T
 - ✅ **Efficiency Score consolidated:** Removed duplicate "Efficiency" labels and unified the display into a single "Efficiency Score" card.
 - ✅ **Resizable panels & UX tweaks:** Smoother drag-to-resize behavior with minimum widths and improved responsive stacking on mobile.
 - ✅ **Dev UX:** Hidden Next.js dev indicator badge by setting `devIndicators: false` in `next.config.mjs`.
-
-> Note: All changes in this release are frontend-only. No backend APIs, Judge0 flow, or mentor-analysis schema were modified.
 
 ### Profile & Auth UX
 - ✅ **Quick logout from profile:** Added logout action in profile header
@@ -121,6 +130,32 @@ Then open: `http://localhost:4028` (or the assigned port shown in terminal)
 ### Scripts
 - `scripts/dev-next.js` - Frontend launcher with port detection (invoked by `dev` script)
 - `scripts/dev-full.js` - Combined launcher with backend management (invoked by `dev:full` script)
+
+## Backend APIs
+
+### POST /api/execute
+- **Purpose:** Execute user code against test cases using Judge0
+- **Request:** Source code, language ID, problem ID, problem snapshot
+- **Response:** Execution results, test case verdicts, compile errors
+- **Integration:** Called on `Run` and `Submit` from CodeEditorPanel
+
+### POST /api/mentor-analysis
+- **Purpose:** AI-powered code analysis using OpenRouter API
+- **Request:** Problem title/statement, user code, language, Judge0 verdict, error details
+- **Response:** Structured JSON with complexity analysis, pattern detection, improvements, hints, edge cases, visualization steps
+- **Analysis:** Dynamically infers O(n) complexity from actual code (counts loops, recursion, data structures)
+- **Integration:** Called automatically after successful `Submit` (SUBMIT-only flow)
+- **Example Response Fields:**
+  - `verdict`: Accepted/Wrong Answer/TLE/Runtime Error
+  - `complexity`: { time, space, optimalTime, optimalSpace, efficiencyScore }
+  - `scores`: { time, space, readability, optimization, interview }
+  - `pattern`: Detected algorithm (Hash Map, Recursion, DP, etc.)
+  - `improvements`: Actionable suggestions
+  - `edgeCases`: Test cases to consider
+  - `visualization`: Step-by-step pseudocode
+  - `interviewInsight`: Interview preparation tips
+
+**Environment:** Set `OPENROUTER_API_KEY` in `server/.env` to enable mentor analysis
 
 ## App Routes
 
@@ -270,7 +305,40 @@ See `server/.env.example` for all available options.
 - **Why:** Next.js 15.5.15 enforces Suspense for `useSearchParams()`
 - **Fix:** Wrapped `ProblemDetailClient` in `<Suspense>` boundary
 
+### 6. AI Mentor Analysis (NEW)
+- **Location:** `server/services/mentorService.js`, `server/controllers/mentorController.js`, `server/routes/mentorRoutes.js`
+- **API:** OpenRouter (model: `openrouter/free`)
+- **Trigger:** POST /api/mentor-analysis (called after successful `Submit`)
+- **Analysis Type:** Dynamic code analysis from real submitted code
+- **Inference Method:**
+  - Counts nested loops to infer time complexity
+  - Detects recursion depth and base cases
+  - Identifies data structure usage (hash maps, sets, heaps)
+  - Analyzes space complexity from code patterns
+  - NO placeholders or generic assumptions — purely code-driven
+- **Response:** Structured JSON with:
+  - Real complexity: O(n), O(n log n), O(n²), etc.
+  - Efficiency score (0-100)
+  - Pattern detection (Hash Map, DP, Recursion, etc.)
+  - Actionable improvements
+  - Interview insights
+  - Edge cases to consider
+  - Step-by-step visualization
+- **Integration:**
+  - Frontend wires CodeEditorPanel to call mentor API after SUBMIT
+  - Mentor analysis attached to `RunResult.mentorAnalysis`
+  - Available only after successful submission (SUBMIT-only flow)
+  - Frontend renders analysis via MentorDashboard components
+- **Environment:** `OPENROUTER_API_KEY` in `server/.env` (required for production use)
+- **Error Handling:** Graceful fallback if OpenRouter API fails; submission still succeeds
+
 ## Troubleshooting
+
+### Mentor Analysis Not Available
+- Verify `OPENROUTER_API_KEY` is set in `server/.env`
+- Ensure submission verdict is "Accepted" (analysis only on successful submit)
+- Check browser console and server logs for API errors
+- Free tier may have rate limits; wait and retry
 
 ### Port Already in Use
 ```bash
@@ -382,5 +450,5 @@ This project is part of AlgoFirst platform. All rights reserved.
 ---
 
 **Last Updated:** May 6, 2026  
-**Version:** 0.2.2  
+**Version:** 0.2.3  
 **Status:** ✅ Production Ready
