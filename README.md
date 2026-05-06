@@ -1,6 +1,6 @@
 # AlgoFirst
 
-**Version:** 0.2.1
+**Version:** 0.2.2
 
 AlgoFirst is a coding practice platform UI built with Next.js, TypeScript, and Tailwind CSS. Fully integrated with Express backend, MongoDB, and Judge0 for code execution.
 
@@ -11,7 +11,19 @@ AlgoFirst is a coding practice platform UI built with Next.js, TypeScript, and T
 - **Code Execution:** Judge0 API (ce.judge0.com) with configurable timeout
 - **Build & Quality:** ESLint, Prettier, Concurrently for parallel tasks
 
-## ✅ Latest Updates (v0.2.1)
+## ✅ Latest Updates (v0.2.2)
+
+### Frontend UX & Mentor (v0.2.2)
+
+- ✅ **Run vs Submit separation:** Strictly separate `Run` (quick feedback) from `Submit` (final evaluation + insights) in the problem-detail UI, similar to LeetCode.
+- ✅ **Mentor insights moved:** AI Mentor/Insights panel now appears below the problem description and is available only after a successful `Submit` (accessible via the new `Insights` tab). Insights panel is closable and re-openable.
+- ✅ **Hints & Topics relocated:** Hints, Interview notes, and Topics are now part of the problem `Description` tab and visible without submitting.
+- ✅ **Collapsible sidebar:** New collapsible sidebar with icons-only collapsed state and smooth transitions for narrow screens.
+- ✅ **Efficiency Score consolidated:** Removed duplicate "Efficiency" labels and unified the display into a single "Efficiency Score" card.
+- ✅ **Resizable panels & UX tweaks:** Smoother drag-to-resize behavior with minimum widths and improved responsive stacking on mobile.
+- ✅ **Dev UX:** Hidden Next.js dev indicator badge by setting `devIndicators: false` in `next.config.mjs`.
+
+> Note: All changes in this release are frontend-only. No backend APIs, Judge0 flow, or mentor-analysis schema were modified.
 
 ### Profile & Auth UX
 - ✅ **Quick logout from profile:** Added logout action in profile header
@@ -369,6 +381,6 @@ This project is part of AlgoFirst platform. All rights reserved.
 
 ---
 
-**Last Updated:** April 22, 2026  
-**Version:** 0.2.0  
+**Last Updated:** May 6, 2026  
+**Version:** 0.2.2  
 **Status:** ✅ Production Ready
