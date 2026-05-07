@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { MOCK_PROBLEMS } from '@/lib/mockData';
+import { fetchProfileStats } from '@/services/api';
 import { useSubmissionStore } from '@/context/SubmissionContext';
 import VerdictBadge from '@/components/ui/VerdictBadge';
 import DifficultyBadge from '@/components/ui/DifficultyBadge';
@@ -53,20 +53,41 @@ export default function ProgressClient() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
   const [expandedSub, setExpandedSub] = useState<string | null>(null);
 
-  // Compute stats
-  const solvedProblemIds = [...new Set(allSubmissions.filter((s) => s.status === 'Accepted').map((s) => s.problemId))];
-  const totalProblems = MOCK_PROBLEMS.length;
-  const solvedCount = solvedProblemIds.length;
-  const easyProblems = MOCK_PROBLEMS.filter((p) => p.difficulty === 'Easy');
-  const mediumProblems = MOCK_PROBLEMS.filter((p) => p.difficulty === 'Medium');
-  const hardProblems = MOCK_PROBLEMS.filter((p) => p.difficulty === 'Hard');
-  const solvedEasy = easyProblems.filter((p) => solvedProblemIds.includes(p.id)).length;
-  const solvedMedium = mediumProblems.filter((p) => solvedProblemIds.includes(p.id)).length;
-  const solvedHard = hardProblems.filter((p) => solvedProblemIds.includes(p.id)).length;
+  const [stats, setStats] = React.useState<{ solvedCount: number; acceptanceRate: number; totalSubmissions: number; acceptedSubmissions: number; streak: number } | null>(null);
 
-  const totalSubmissions = allSubmissions.length;
-  const acceptedSubmissions = allSubmissions.filter((s) => s.status === 'Accepted').length;
-  const acceptanceRate = totalSubmissions > 0 ? Math.round((acceptedSubmissions / totalSubmissions) * 100) : 0;
+  React.useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetchProfileStats();
+        if (!active) return;
+        if (res && res.success) {
+          setStats({
+            solvedCount: res.stats.solvedCount || 0,
+            acceptanceRate: res.stats.acceptanceRate || 0,
+            totalSubmissions: res.stats.totalSubmissions || 0,
+            acceptedSubmissions: res.stats.acceptedSubmissions || 0,
+            streak: res.stats.streak || 0,
+          });
+        }
+      } catch (err) {
+        // ignore; keep local derived values below as fallback
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const solvedCount = stats ? stats.solvedCount : [...new Set(allSubmissions.filter((s) => s.status === 'Accepted').map((s) => s.problemId))].length;
+  const totalSubmissions = stats ? stats.totalSubmissions : allSubmissions.length;
+  const acceptedSubmissions = stats ? stats.acceptedSubmissions : allSubmissions.filter((s) => s.status === 'Accepted').length;
+  const acceptanceRate = stats ? stats.acceptanceRate : (totalSubmissions > 0 ? Math.round((acceptedSubmissions / totalSubmissions) * 100) : 0);
+  const streak = stats ? stats.streak : 0;
+
+  const uniqueProblemIds = [...new Set(allSubmissions.map((s) => s.problemId))];
+  const totalProblems = uniqueProblemIds.length || solvedCount || 0;
 
   // Filtered submissions
   const filteredSubmissions = statusFilter === 'All'
@@ -78,7 +99,9 @@ export default function ProgressClient() {
     .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
     .slice(0, 5);
 
-  const getProblemById = (id: string) => MOCK_PROBLEMS.find((p) => p.id === id);
+  const uniqueProblemIds = [...new Set(allSubmissions.map((s) => s.problemId))];
+  const totalProblems = uniqueProblemIds.length || solvedCount || 0;
+  const getProblemById = (_id: string) => null;
 
   const statusCounts = {
     Accepted: allSubmissions.filter((s) => s.status === 'Accepted').length,
@@ -171,50 +194,33 @@ export default function ProgressClient() {
                 <Zap size={16} className="text-amber-400" />
               </div>
               <div className="flex items-end gap-1.5">
-                <span className="text-3xl font-bold text-zinc-100 tabular-nums">3</span>
-                <span className="text-sm text-zinc-500 mb-1">days</span>
+                {stats === null ? (
+                  <>
+                    <span className="text-3xl font-bold text-zinc-100 tabular-nums">—</span>
+                    <span className="text-sm text-zinc-500 mb-1">days</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-3xl font-bold text-zinc-100 tabular-nums">{streak}</span>
+                    <span className="text-sm text-zinc-500 mb-1">days</span>
+                  </>
+                )}
               </div>
               <div className="flex gap-1">
-                {[true, true, true, false, false, false, false].map((active, i) => (
-                  <div
-                    key={i}
-                    className={`flex-1 h-1.5 rounded-full ${active ? 'bg-amber-500' : 'bg-zinc-800'}`}
-                  />
-                ))}
+                {Array.from({ length: 7 }).map((_, i) => {
+                  const active = stats !== null && i < streak;
+                  return (
+                    <div
+                      key={i}
+                      className={`flex-1 h-1.5 rounded-full ${active ? 'bg-amber-500' : 'bg-zinc-800'}`}
+                    />
+                  );
+                })}
               </div>
             </div>
           </div>
 
-          {/* Difficulty Breakdown */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-            <h2 className="text-sm font-semibold text-zinc-300 mb-4 flex items-center gap-2">
-              <BarChart3 size={15} className="text-zinc-500" />
-              Difficulty Breakdown
-            </h2>
-            <div className="grid grid-cols-3 gap-4">
-              {[
-                { label: 'Easy', solved: solvedEasy, total: easyProblems.length, color: 'text-emerald-400', bar: 'bg-emerald-500', track: 'bg-emerald-500/10' },
-                { label: 'Medium', solved: solvedMedium, total: mediumProblems.length, color: 'text-amber-400', bar: 'bg-amber-500', track: 'bg-amber-500/10' },
-                { label: 'Hard', solved: solvedHard, total: hardProblems.length, color: 'text-red-400', bar: 'bg-red-500', track: 'bg-red-500/10' },
-              ].map(({ label, solved, total, color, bar, track }) => (
-                <div key={label} className={`${track} rounded-lg p-4 border border-zinc-800`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className={`text-sm font-semibold ${color}`}>{label}</span>
-                    <span className="text-xs text-zinc-500 tabular-nums">{solved}/{total}</span>
-                  </div>
-                  <div className="w-full bg-zinc-800 rounded-full h-2 mb-2">
-                    <div
-                      className={`${bar} h-2 rounded-full transition-all`}
-                      style={{ width: total > 0 ? `${(solved / total) * 100}%` : '0%' }}
-                    />
-                  </div>
-                  <span className="text-xs text-zinc-500">
-                    {total > 0 ? Math.round((solved / total) * 100) : 0}% solved
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Difficulty Breakdown removed: use server-driven metrics instead */}
 
           {/* Recent Activity */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">

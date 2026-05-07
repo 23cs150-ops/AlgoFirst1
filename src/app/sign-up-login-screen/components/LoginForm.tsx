@@ -16,11 +16,6 @@ interface LoginFormProps {
   onSwitchToRegister: () => void;
 }
 
-// Demo credentials for the mock UI
-const DEMO_CREDENTIALS = {
-  email: 'dev@algofirst.io',
-  password: 'Arena@2026',
-};
 
 export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
@@ -39,45 +34,40 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
     defaultValues: { rememberMe: true },
   });
 
-  const handleCopy = async (field: 'email' | 'password') => {
-    const value = field === 'email' ? DEMO_CREDENTIALS.email : DEMO_CREDENTIALS.password;
-    await navigator.clipboard.writeText(value);
-    setCopiedField(field);
-    setTimeout(() => setCopiedField(null), 2000);
-  };
-
-  const handleUseDemoCredentials = () => {
-    setValue('email', DEMO_CREDENTIALS.email);
-    setValue('password', DEMO_CREDENTIALS.password);
-  };
+  // Demo autofill removed. Use real credentials to sign in.
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     try {
-      // Backend integration: POST /api/auth/login with { email, password }
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-
-      if (
-        data.email === DEMO_CREDENTIALS.email &&
-        data.password === DEMO_CREDENTIALS.password
-      ) {
-        const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mock.token';
-        const mockUser = {
-          id: 'user-001',
-          username: 'devuser',
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           email: data.email,
-          createdAt: '2026-01-15T00:00:00Z',
-        };
-        login(mockToken, mockUser);
-        toast.success('Welcome back! Redirecting to problems...');
-        router.push('/problem-list');
-      } else {
+          password: data.password,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
         setError('root', {
-          message: 'Invalid credentials — use the demo accounts below to sign in',
+          message: result.message || 'Login failed. Please check your credentials.',
         });
+        toast.error(result.message || 'Login failed');
+        return;
       }
-    } catch {
+
+      login(result.token, result.user);
+      toast.success('Welcome back! Redirecting to problems...');
+      router.push('/problem-list');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Connection failed';
+      setError('root', {
+        message: errorMessage,
+      });
       toast.error('Connection failed. Check your network and try again.');
     } finally {
       setIsLoading(false);
@@ -209,56 +199,7 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
         </button>
       </form>
 
-      {/* Divider */}
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-zinc-800" />
-        </div>
-        <div className="relative flex justify-center text-xs">
-          <span className="bg-zinc-950 px-3 text-zinc-600">demo credentials</span>
-        </div>
-      </div>
-
-      {/* Demo Credentials Box */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
-            Try the demo account
-          </span>
-          <button
-            type="button"
-            onClick={handleUseDemoCredentials}
-            className="text-xs text-blue-400 hover:text-blue-300 font-medium transition-colors"
-          >
-            Autofill
-          </button>
-        </div>
-        <div className="space-y-2">
-          {[
-            { id: 'cred-email', label: 'Email', value: DEMO_CREDENTIALS.email, field: 'email' as const },
-            { id: 'cred-pass', label: 'Password', value: DEMO_CREDENTIALS.password, field: 'password' as const },
-          ].map((cred) => (
-            <div key={cred.id} className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="text-xs text-zinc-600 w-14 flex-shrink-0">{cred.label}</span>
-                <span className="text-xs font-mono text-zinc-300 truncate">{cred.value}</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleCopy(cred.field)}
-                className="flex-shrink-0 p-1 text-zinc-500 hover:text-zinc-300 transition-colors"
-                aria-label={`Copy ${cred.label}`}
-              >
-                {copiedField === cred.field ? (
-                  <Check size={13} className="text-green-400" />
-                ) : (
-                  <Copy size={13} />
-                )}
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Demo credentials removed — require real account for consistent user-specific stats */}
 
       {/* Switch to Register */}
       <p className="text-center text-sm text-zinc-500">

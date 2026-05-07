@@ -1,5 +1,6 @@
 const Problem = require('../models/Problem');
 const Submission = require('../models/Submission');
+const User = require('../models/User');
 const { executeCode } = require('../services/judge0Service');
 
 function normalizeOutput(value) {
@@ -213,15 +214,19 @@ function hasJavaMain(sourceCode) {
       String s = raw == null ? "" : raw.trim();
 
       if (type == int.class || type == Integer.class) {
+        if (s.isEmpty()) return 0;
         return Integer.parseInt(s);
       }
       if (type == long.class || type == Long.class) {
+        if (s.isEmpty()) return 0L;
         return Long.parseLong(s);
       }
       if (type == double.class || type == Double.class) {
+        if (s.isEmpty()) return 0d;
         return Double.parseDouble(s);
       }
       if (type == boolean.class || type == Boolean.class) {
+        if (s.isEmpty()) return false;
         return Boolean.parseBoolean(s.toLowerCase());
       }
       if (type == String.class) {
@@ -557,11 +562,18 @@ async function ensureProblem(problemId, problemSnapshot) {
 
 async function executeController(req, res) {
   try {
-    const { source_code, language_id, problemId, userId = null, problemSnapshot = null } = req.body;
+    const { source_code, language_id, problemId, problemSnapshot = null } = req.body;
+    const userId = req.userId; // From JWT token via verifyTokenMiddleware
 
     if (!source_code || !language_id || !problemId) {
       return res.status(400).json({
         message: 'source_code, language_id, and problemId are required.',
+      });
+    }
+
+    if (!userId) {
+      return res.status(401).json({
+        message: 'Authentication required. Please log in.',
       });
     }
 
@@ -632,6 +644,52 @@ async function executeController(req, res) {
       })),
     });
 
+    // Update user stats: solvedCount, acceptanceRate, streak, lastSubmissionDate
+    try {
+      const acceptedCount = await Submission.countDocuments({ userId, status: 'Accepted' });
+      const totalCount = await Submission.countDocuments({ userId });
+      console.log('Updating user stats for', userId, 'acceptedCount=', acceptedCount, 'totalCount=', totalCount);
+
+      const user = await User.findById(userId);
+      if (user) {
+        // Recalculate acceptance rate and solved count
+        user.stats.solvedCount = acceptedCount;
+        user.stats.acceptanceRate = totalCount > 0 ? Math.round((acceptedCount / totalCount) * 100) : 0;
+
+        // Only update streak/lastSubmissionDate when the submission is Accepted
+        if (status === 'Accepted') {
+          const now = new Date();
+          const prev = user.stats.lastSubmissionDate ? new Date(user.stats.lastSubmissionDate) : null;
+
+          // Normalize to UTC date boundaries to avoid timezone issues
+          const toUTCDate = (d) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+
+          let newStreak = 1;
+          if (prev) {
+            const prevDay = toUTCDate(prev);
+            const todayDay = toUTCDate(now);
+            const diffDays = Math.round((todayDay - prevDay) / (1000 * 60 * 60 * 24));
+            if (diffDays === 0) {
+              // already had an accepted submission today; keep streak
+              newStreak = user.stats.streak || 1;
+            } else if (diffDays === 1) {
+              newStreak = (user.stats.streak || 0) + 1;
+            } else {
+              newStreak = 1;
+            }
+          }
+
+          user.stats.streak = newStreak;
+          user.stats.lastSubmissionDate = now;
+        }
+
+        await user.save();
+      }
+    } catch (err) {
+      // Non-fatal: log and continue. Do not block submission response on stats update.
+      console.error('Failed to update user stats:', err);
+    }
+
     return res.status(200).json({
       submissionId: submissionRecord._id,
       status,
@@ -658,14 +716,18 @@ async function executeController(req, res) {
 
 async function getSubmissionsController(req, res) {
   try {
-    const { problemId, userId } = req.query;
+    const { problemId } = req.query;
+    const userId = req.userId; // From JWT token via verifyTokenMiddleware
 
-    const query = {};
+    if (!userId) {
+      return res.status(401).json({
+        message: 'Authentication required. Please log in.',
+      });
+    }
+
+    const query = { userId }; // Always filter by current authenticated user
     if (problemId) {
       query.problemId = String(problemId);
-    }
-    if (userId) {
-      query.userId = String(userId);
     }
 
     const submissions = await Submission.find(query)

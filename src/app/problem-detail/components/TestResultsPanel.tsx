@@ -1,7 +1,9 @@
 'use client';
 import React, { useState } from 'react';
 import { Problem } from '@/lib/mockData';
-import { CheckCircle2, XCircle, Loader2, Clock, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
+import RunResultPanel from '@/components/execution/RunResultPanel';
+import SubmitResultPanel from '@/components/execution/SubmitResultPanel';
 
 interface TestResult {
   id: string;
@@ -22,6 +24,7 @@ interface RunResult {
   testResults?: TestResult[];
   errorMessage?: string;
   stdout?: string;
+  code?: string;
 }
 
 interface TestResultsPanelProps {
@@ -151,98 +154,28 @@ export default function TestResultsPanel({
     );
   }
 
-  // Show run/submit results
-  const results = runResult.testResults || [];
+  // Show run/submit results with strict separation: RUN = minimal, SUBMIT = full
+  if (runResult.type === 'run') {
+    return (
+      <RunResultPanel
+        verdict={runResult.verdict}
+        runtime={runResult.runtime}
+        memory={runResult.memory}
+        passedCount={runResult.passedCount}
+        totalCount={runResult.totalCount}
+        testResults={runResult.testResults}
+      />
+    );
+  }
 
   return (
-    <div className="h-full flex flex-col bg-zinc-950">
-      {/* Result tabs */}
-      <div className="flex items-center gap-1 px-3 pt-2 pb-0 border-b border-zinc-800 flex-shrink-0 overflow-x-auto">
-        {results.map((result, i) => (
-          <button
-            key={result.id}
-            onClick={() => setActiveTestCase(i)}
-            className={`
-              flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-all duration-150 flex-shrink-0
-              ${activeTestCase === i
-                ? result.passed
-                  ? 'text-green-400 border-green-500' :'text-red-400 border-red-500'
-                : result.passed
-                ? 'text-zinc-500 border-transparent hover:text-green-400' :'text-zinc-500 border-transparent hover:text-red-400'
-              }
-            `}
-          >
-            {result.passed ? (
-              <CheckCircle2 size={11} className="text-green-400" />
-            ) : (
-              <XCircle size={11} className="text-red-400" />
-            )}
-            Case {i + 1}
-          </button>
-        ))}
-      </div>
-
-      {/* Result content */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
-        {results[activeTestCase] ? (
-          <>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-xs text-zinc-500 font-medium uppercase tracking-wider">
-                  Input
-                </label>
-                <pre className="font-mono text-xs text-zinc-300 bg-zinc-900 border border-zinc-800 rounded-md p-2.5 leading-relaxed overflow-x-auto">
-                  {results[activeTestCase].input}
-                </pre>
-              </div>
-              <div className="space-y-1">
-                {results[activeTestCase].runtime && (
-                  <div className="flex items-center gap-1 text-xs text-zinc-500 mb-1">
-                    <Clock size={11} />
-                    <span className="font-mono tabular-nums">{results[activeTestCase].runtime}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-xs text-zinc-500 font-medium uppercase tracking-wider">
-                  Expected Output
-                </label>
-                <pre className="font-mono text-xs text-green-300 bg-green-500/5 border border-green-500/20 rounded-md p-2.5 leading-relaxed overflow-x-auto">
-                  {results[activeTestCase].expected}
-                </pre>
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs text-zinc-500 font-medium uppercase tracking-wider">
-                  Your Output
-                </label>
-                <pre
-                  className={`
-                    font-mono text-xs rounded-md p-2.5 leading-relaxed overflow-x-auto border
-                    ${results[activeTestCase].passed
-                      ? 'text-green-300 bg-green-500/5 border-green-500/20' :'text-red-300 bg-red-500/5 border-red-500/20'
-                    }
-                  `}
-                >
-                  {results[activeTestCase].actual}
-                </pre>
-              </div>
-            </div>
-
-            {!results[activeTestCase].passed && (
-              <div className="bg-red-500/5 border border-red-500/20 rounded-md p-2.5 text-xs text-red-300">
-                Output does not match expected. Check your logic for this input case.
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="text-sm text-zinc-500 text-center py-4">
-            No result data for this test case.
-          </div>
-        )}
-      </div>
-    </div>
+    <SubmitResultPanel
+      verdict={runResult.verdict}
+      runtime={runResult.runtime}
+      memory={runResult.memory}
+      passedCount={runResult.passedCount}
+      totalCount={runResult.totalCount}
+      testResults={runResult.testResults}
+    />
   );
 }

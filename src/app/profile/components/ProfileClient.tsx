@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { MOCK_PROBLEMS } from '@/lib/mockData';
+import { fetchProfileStats } from '@/services/api';
 import { useSubmissionStore } from '@/context/SubmissionContext';
 import { useRouter } from 'next/navigation';
 import VerdictBadge from '@/components/ui/VerdictBadge';
@@ -57,8 +57,8 @@ export default function ProfileClient() {
   const [activeTab, setActiveTab] = useState<Tab>('account');
 
   // Account form state
-  const [username, setUsername] = useState(user?.username ?? 'dev_user');
-  const [email, setEmail] = useState(user?.email ?? 'dev@algofirst.io');
+  const [username, setUsername] = useState(user?.username ?? '');
+  const [email, setEmail] = useState(user?.email ?? '');
   const [accountSaved, setAccountSaved] = useState(false);
 
   // Password form state
@@ -79,25 +79,41 @@ export default function ProfileClient() {
   const [showDifficulty, setShowDifficulty] = useState(true);
   const [prefSaved, setPrefSaved] = useState(false);
 
-  // Stats computation
-  const solvedProblemIds = [...new Set(allSubmissions.filter((s) => s.status === 'Accepted').map((s) => s.problemId))];
-  const totalProblems = MOCK_PROBLEMS.length;
-  const solvedCount = solvedProblemIds.length;
-  const easyProblems = MOCK_PROBLEMS.filter((p) => p.difficulty === 'Easy');
-  const mediumProblems = MOCK_PROBLEMS.filter((p) => p.difficulty === 'Medium');
-  const hardProblems = MOCK_PROBLEMS.filter((p) => p.difficulty === 'Hard');
-  const solvedEasy = easyProblems.filter((p) => solvedProblemIds.includes(p.id)).length;
-  const solvedMedium = mediumProblems.filter((p) => solvedProblemIds.includes(p.id)).length;
-  const solvedHard = hardProblems.filter((p) => solvedProblemIds.includes(p.id)).length;
-  const totalSubmissions = allSubmissions.length;
-  const acceptedSubmissions = allSubmissions.filter((s) => s.status === 'Accepted').length;
-  const acceptanceRate = totalSubmissions > 0 ? Math.round((acceptedSubmissions / totalSubmissions) * 100) : 0;
+  const [stats, setStats] = React.useState<{ solvedCount: number; acceptanceRate: number; totalSubmissions: number; acceptedSubmissions: number; streak: number } | null>(null);
+
+  React.useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetchProfileStats();
+        if (!active) return;
+        if (res && res.success) {
+          setStats({
+            solvedCount: res.stats.solvedCount || 0,
+            acceptanceRate: res.stats.acceptanceRate || 0,
+            totalSubmissions: res.stats.totalSubmissions || 0,
+            acceptedSubmissions: res.stats.acceptedSubmissions || 0,
+            streak: res.stats.streak || 0,
+          });
+        }
+      } catch (err) {
+        // ignore
+      }
+    })();
+
+    return () => { active = false; };
+  }, []);
+
+  const solvedCount = stats ? stats.solvedCount : [...new Set(allSubmissions.filter((s) => s.status === 'Accepted').map((s) => s.problemId))].length;
+  const totalSubmissions = stats ? stats.totalSubmissions : allSubmissions.length;
+  const acceptedSubmissions = stats ? stats.acceptedSubmissions : allSubmissions.filter((s) => s.status === 'Accepted').length;
+  const acceptanceRate = stats ? stats.acceptanceRate : (totalSubmissions > 0 ? Math.round((acceptedSubmissions / totalSubmissions) * 100) : 0);
 
   const recentSubmissions = [...allSubmissions]
     .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
     .slice(0, 5);
 
-  const getProblemById = (id: string) => MOCK_PROBLEMS.find((p) => p.id === id);
+  const getProblemById = (_id: string) => null;
 
   const handleAccountSave = () => {
     setAccountSaved(true);

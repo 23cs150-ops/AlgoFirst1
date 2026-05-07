@@ -48,23 +48,39 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
   const strengthColor = ['', 'bg-red-500', 'bg-yellow-500', 'bg-blue-400', 'bg-green-500'][strengthScore];
 
   const onSubmit = async (data: RegisterFormData) => {
+    if (!data.agreeToTerms) {
+      toast.error('Please accept the terms and conditions');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // Backend integration: POST /api/auth/register with { username, email, password }
-      await new Promise((resolve) => setTimeout(resolve, 1400));
+      const response = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: data.username,
+          email: data.email,
+          password: data.password,
+          confirmPassword: data.confirmPassword,
+        }),
+      });
 
-      const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.new.user.token';
-      const mockUser = {
-        id: 'user-new-001',
-        username: data.username,
-        email: data.email,
-        createdAt: new Date().toISOString(),
-      };
-      login(mockToken, mockUser);
+      const result = await response.json();
+
+      if (!response.ok) {
+        toast.error(result.message || 'Registration failed');
+        return;
+      }
+
+      login(result.token, result.user);
       toast.success('Account created! Welcome to AlgoFirst.');
       router.push('/problem-list');
-    } catch {
-      toast.error('Registration failed. Please try again.');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Connection failed';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

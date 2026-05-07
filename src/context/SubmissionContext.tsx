@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { MOCK_PROBLEMS, MOCK_SUBMISSIONS, Submission } from '@/lib/mockData';
+import { Submission } from '@/lib/mockData';
 import { fetchSubmissions } from '@/services/api';
 
 interface SubmissionContextValue {
@@ -118,10 +118,10 @@ export function SubmissionProvider({ children }: { children: React.ReactNode }) 
         setSubmissions(sorted);
         writeCachedSubmissions(sorted);
       } catch {
-        // Keep existing mock seed as fallback when backend is unavailable.
+        // If backend unavailable, keep any cached submissions; otherwise use empty list.
         if (!active) return;
 
-        const fallback = readCachedSubmissions() || buildInitialSubmissions();
+        const fallback = readCachedSubmissions() || [];
         setSubmissions(fallback);
       }
     })();

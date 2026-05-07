@@ -17,7 +17,6 @@ export interface ExecuteCodeRequest {
 	source_code: string;
 	language_id: number;
 	problemId: string;
-	userId?: string;
 	problemSnapshot?: ExecuteProblemSnapshot;
 }
 
@@ -57,6 +56,20 @@ const api = axios.create({
 	},
 });
 
+// Add authorization header interceptor to include Bearer token from localStorage
+api.interceptors.request.use(
+	(config) => {
+		if (typeof window !== 'undefined') {
+			const token = localStorage.getItem('authToken');
+			if (token) {
+				config.headers.Authorization = `Bearer ${token}`;
+			}
+		}
+		return config;
+	},
+	(error) => Promise.reject(error),
+);
+
 export async function executeCode(payload: ExecuteCodeRequest): Promise<ExecuteCodeResponse> {
 	const response = await api.post<ExecuteCodeResponse>('/api/execute', payload);
 	return response.data;
@@ -68,6 +81,23 @@ export async function fetchSubmissions(problemId?: string): Promise<PersistedSub
 	});
 
 	return response.data.submissions;
+}
+
+export interface ProfileStatsResponse {
+	success: boolean;
+	stats: {
+		totalSubmissions: number;
+		acceptedSubmissions: number;
+		solvedCount: number;
+		acceptanceRate: number;
+		streak: number;
+		lastSubmissionDate: string | null;
+	};
+}
+
+export async function fetchProfileStats(): Promise<ProfileStatsResponse> {
+	const response = await api.get<ProfileStatsResponse>('/api/profile/stats');
+	return response.data;
 }
 
 export interface MentorAnalysisRequest {
@@ -121,5 +151,10 @@ export async function getMentorAnalysis(
 	payload: MentorAnalysisRequest,
 ): Promise<MentorAnalysisResponse> {
 	const response = await api.post<MentorAnalysisResponse>('/api/mentor-analysis', payload);
+	return response.data;
+}
+
+export async function fetchCurrentUser() {
+	const response = await api.get('/api/auth/me');
 	return response.data;
 }

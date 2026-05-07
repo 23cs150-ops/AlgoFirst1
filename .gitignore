@@ -28,6 +28,11 @@ next-env.d.ts
 
 # Optional: if using testing tools
 coverage/
+
+# Environment variables - never commit secrets
+.env
+server/.env
+.env.local
 jest-test-results.json
 
 # Optional: if using IDEs
